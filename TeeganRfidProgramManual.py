@@ -6,6 +6,8 @@ import time
 FileName = "TMRWVialGoodList"                          # Threw a random name in here
 Date = datetime.datetime.now().strftime("%Y%m%d")
 Ids = set()
+TempColumn = 0                                         # A temp variable to be used in the main loop to lookup the column
+
 
 def ReaderIdConvert(DecimalValue):                     # Kevin's code to convert to hexadecimal
     HexValue = hex(int(DecimalValue))[2:].upper()      # Remove '0x' and convert to uppercase
@@ -24,7 +26,7 @@ def MakeCSV():                                         # Check for existing file
     if not os.path.exists(FileName + ".csv") or os.stat(FileName + ".csv").st_size == 0:
         with open(FileName + ".csv", 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(['Scanned Tag', 'Employee Number', 'Date', 'Time'])
+            writer.writerow(['Scanned Tag', 'Employee Number', 'Date', 'Time', 'Second Scan', 'Third Scan', 'Fourth Scan', 'Fith Scan', 'Sixth Scan'])
             print("The file has been created")
 
 def ReadCSVMakeSet():                                  # Reads the file if already present, and writes the ids in the file to the set
@@ -43,41 +45,69 @@ def TakeTimeStamp():                                   # Function to take a time
     Time = DateTimeObject.strftime("%H:%M:%S")
     return Time
 
+def SecondTimeStamp(HexValue):                         # Function to handle multiple scann
+    rows = []
+    updated = False
+
+    try:
+        with open(FileName + ".csv", 'r') as file:
+            reader = csv.reader(file)
+            header = next(reader)
+            rows.append(header)
+
+            for row in reader:
+                if row[0] == HexValue:
+                    for i in range(4, 9):              # Update the scan time columns
+                        if row[i] == '':
+                            row[i] = TakeTimeStamp()
+                            updated = True
+                            break
+                rows.append(row)
+
+        if updated:
+            with open(FileName + ".csv", 'w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerows(rows)
+            print(f"Scan time for tag {HexValue} has been recorded.")
+        else:
+            print(f"Tag {HexValue} not found to update scan time.")
+    except IndexError:
+        print(f"Error: The CSV file does not have the expected number of columns for tag {HexValue}.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
+
 def main():
-    EmployeeNum = GetEmployeeNum()                     # Get the user's employees number
-    print("Press Ctrl+C to exit the program")          # Let the user know how to exit
-    ReadCSVMakeSet()                                   # Make sure that the file already exists
-    
+    EmployeeNum = GetEmployeeNum()
+    print("Press Ctrl+C to exit the program")
+    ReadCSVMakeSet()
+
     while True:
         try:
-            DecimalValue = input("Scan the RFID tag please. Press Ctrl+C to exit. ") # Tag entry
-            HexValue = ReaderIdConvert(DecimalValue)   # Convert the tags value
-            
-            if len(HexValue) != 16:                    # Check for invalid input
+            DecimalValue = input("Scan the RFID tag please. Press Ctrl+C to exit. ")
+            HexValue = ReaderIdConvert(DecimalValue)
+
+            if len(HexValue) != 16:
                 print("The number scanned is not valid. Please scan a tag with a 16 digit Hex.")
-                continue                               # Skip this iteration if the hex is invalid
-            
-            if HexValue in Ids:                        # Make sure that the tag had not already been scanned
-                print("This tag has already been scanned.")
+                continue
+
+            if HexValue in Ids:
+                SecondTimeStamp(HexValue)
             else:
-                Ids.add(HexValue)                      # Add the tag value to the set
+                Ids.add(HexValue)
+                MakeCSV()
 
-                try:
-                    MakeCSV()                          # Create the File if it does not exist 
+                with open(FileName + ".csv", 'a', newline='') as file:
+                    writer = csv.writer(file)
+                    writer.writerow([HexValue, EmployeeNum, Date, TakeTimeStamp(), '', '', '', '', ''])
 
-                                                       # Append the new data to the CSV
-                    with open(FileName + ".csv", 'a', newline='') as file:
-                        writer = csv.writer(file)
-                        writer.writerow([HexValue, EmployeeNum, Date, TakeTimeStamp()])
-
-                    print("A tag has been recorded")   # Let the user know that a tag has been scanned and enter into the file
-
-                except PermissionError:                # Likely the file is open in Excel, and thus you wont be able to write to it
-                    print("You don't have the proper permissions to write to or open this file")
-                    Ids.remove(HexValue)               # Ensure that the id value is not recorded, and can be scanned again
+                print("A tag has been recorded")
 
         except ValueError:
             print("The tag that was scanned is invalid")
+        except PermissionError:
+            print("You don't have the proper permissions to write to or open this file")
         except KeyboardInterrupt:
             print("Closing the program")
             break
