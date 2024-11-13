@@ -84,11 +84,11 @@ def main():
 
     while True:
         try:
-            DecimalValue = input("Scan the RFID tag please. Press Ctrl+C to exit. ")
+            DecimalValue = input("Scan the RFID tag please. Press Ctrl+C to exit.\n")
             HexValue = ReaderIdConvert(DecimalValue)
 
             if len(HexValue) != 16:
-                print("The number scanned is not valid. Please scan a tag with a 16 digit Hex.")
+                print("The number scanned is not valid. Please scan a tag with a 16 digit Hex.\n")
                 continue
 
             if HexValue in Ids:
