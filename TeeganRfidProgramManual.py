@@ -5,8 +5,7 @@ import time
 
 FileName = "TMRWVialGoodList"                          # Threw a random name in here
 Date = datetime.datetime.now().strftime("%Y%m%d")
-Ids = set()
-TempColumn = 0                                         # A temp variable to be used in the main loop to lookup the column
+Ids = set()                                            # A temp variable to be used in the main loop to lookup the column
 
 
 def ReaderIdConvert(DecimalValue):                     # Kevin's code to convert to hexadecimal
@@ -45,7 +44,7 @@ def TakeTimeStamp():                                   # Function to take a time
     Time = DateTimeObject.strftime("%H:%M:%S")
     return Time
 
-def SecondTimeStamp(HexValue):                         # Function to handle multiple scann
+def SecondTimeStamp(HexValue):                         # Function to handle multiple scans
     rows = []
     updated = False
 
@@ -68,7 +67,7 @@ def SecondTimeStamp(HexValue):                         # Function to handle mult
             with open(FileName + ".csv", 'w', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerows(rows)
-            print(f"Scan time for tag {HexValue} has been recorded.")
+            print(f"Another time has been recorded for this tag.")
         else:
             print(f"Tag {HexValue} not found to update scan time.")
     except IndexError:
